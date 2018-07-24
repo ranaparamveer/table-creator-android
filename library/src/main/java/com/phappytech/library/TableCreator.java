@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.phappytech.library.annotations.PrimaryKey;
 
 import org.chalup.microorm.annotations.Column;
 
@@ -42,7 +43,7 @@ public class TableCreator {
         createColumnsMap(mClass);
         try {
             StringBuilder commandBuilder = new StringBuilder("CREATE TABLE "
-                    + tableName + " ( id INTEGER PRIMARY KEY AUTOINCREMENT");
+                    + tableName + " ( ");
             for (Map.Entry<String, String> entry : COLUMN_FIELDS.entrySet())
                 commandBuilder.append(", ").append(entry.getKey()).append(" ").append(entry.getValue());
 
@@ -58,6 +59,7 @@ public class TableCreator {
     private <T> void createColumnsMap(Class<T> mClass) {
         if (!COLUMN_FIELDS.isEmpty())
             COLUMN_FIELDS.clear();
+        boolean primaryKeyFound = false;
         for (Field field : Fields.allFieldsIncludingPrivateAndSuper(mClass)) {
             field.setAccessible(true);
             Column columnAnnotation = field.getAnnotation(Column.class);
@@ -69,7 +71,16 @@ public class TableCreator {
                     throw new IllegalArgumentException("It doesn't make sense to set treatNullAsDefault on readonly column");
                 }
 
-                COLUMN_FIELDS.put(columnAnnotation.value(), TYPE_ADAPTERS.get(field.getType()));
+                PrimaryKey primaryKeyAnnotation = field.getAnnotation(PrimaryKey.class);
+                String primaryKeyString = "";
+                if (primaryKeyAnnotation != null && (TYPE_ADAPTERS.get(field.getType()).equals("INTEGER"))) {
+                    if(primaryKeyFound)
+                        throw new RuntimeException("Multiple Primary Keys found in column model");
+                    primaryKeyString = " PRIMARY KEY AUTOINCREMENT";
+                    primaryKeyFound=true;
+                }
+
+                COLUMN_FIELDS.put(columnAnnotation.value(), TYPE_ADAPTERS.get(field.getType()) + primaryKeyString);
 
             }
 
