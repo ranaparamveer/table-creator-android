@@ -12,7 +12,6 @@ public @interface PrimaryKey {
     /**
      * @return the desired name of the column representing the field
      */
-    String value();
     boolean autoIncrement() default true;
     boolean readonly() default false;
 }

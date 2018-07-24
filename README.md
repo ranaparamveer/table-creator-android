@@ -42,3 +42,20 @@ Open your database in writable mode and pass on the database object to TableCrea
 ```
 
 This method returns true if table already exist or if it is created successfully and false otherwise.
+
+
+To add a field as colum, attach ```@Column``` annotation and to set any field as primary, use ```@PrimaryKey``` as annotation. e.g:
+
+```
+    @Column("pk")
+    @PrimaryKey
+    private int primaryKey;
+    @Column("empID")
+    int id;
+    @Column("name")
+    String name;
+    @Column("isPresent")
+    boolean isPresent;
+    @Column("salary")
+    float salaryInLacs;
+    ```

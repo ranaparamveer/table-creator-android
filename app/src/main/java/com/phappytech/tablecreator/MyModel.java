@@ -3,9 +3,14 @@ package com.phappytech.tablecreator;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.phappytech.library.annotations.PrimaryKey;
+
 import org.chalup.microorm.annotations.Column;
 
 public class MyModel implements Parcelable {
+    @Column("pk")
+    @PrimaryKey
+    private int primaryKey;
     @Column("empID")
     int id;
     @Column("name")
