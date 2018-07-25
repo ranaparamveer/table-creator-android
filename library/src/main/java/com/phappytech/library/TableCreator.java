@@ -44,9 +44,11 @@ public class TableCreator {
         try {
             StringBuilder commandBuilder = new StringBuilder("CREATE TABLE "
                     + tableName + " ( ");
-            for (Map.Entry<String, String> entry : COLUMN_FIELDS.entrySet())
-                commandBuilder.append(", ").append(entry.getKey()).append(" ").append(entry.getValue());
-
+            String previousSymbol="";
+            for (Map.Entry<String, String> entry : COLUMN_FIELDS.entrySet()) {
+                commandBuilder.append(previousSymbol).append(entry.getKey()).append(" ").append(entry.getValue());
+                previousSymbol=", ";
+            }
             String command = commandBuilder.append(")").toString();
             sqLiteDatabase.execSQL(command);
         } catch (SQLException e) {
