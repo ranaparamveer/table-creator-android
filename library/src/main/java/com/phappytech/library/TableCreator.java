@@ -44,10 +44,10 @@ public class TableCreator {
         try {
             StringBuilder commandBuilder = new StringBuilder("CREATE TABLE "
                     + tableName + " ( ");
-            String previousSymbol="";
+            String previousSymbol = "";
             for (Map.Entry<String, String> entry : COLUMN_FIELDS.entrySet()) {
                 commandBuilder.append(previousSymbol).append(entry.getKey()).append(" ").append(entry.getValue());
-                previousSymbol=", ";
+                previousSymbol = ", ";
             }
             String command = commandBuilder.append(")").toString();
             sqLiteDatabase.execSQL(command);
@@ -58,7 +58,41 @@ public class TableCreator {
         return true;
     }
 
-    private <T> void createColumnsMap(Class<T> mClass) {
+    /**
+     * Create table in opened database from model
+     *
+     * @param sqLiteDatabase       writable non-null database and currently opened
+     * @param tableName            table name to create
+     * @param columnNamesWithTypes String array of column names with their types.
+     *                             eg: new String[]{"ZNAME TEXT","ZID INTEGER"}
+     * @param <T>                  template of class to be used
+     * @return true if table already exists or is successfully created
+     * false otherwise
+     */
+    public <T> boolean createTable(@NonNull SQLiteDatabase sqLiteDatabase, @NonNull String tableName,
+                                   @NonNull String[] columnNamesWithTypes) {
+        if (!sqLiteDatabase.isOpen() || (sqLiteDatabase.isOpen() && sqLiteDatabase.isReadOnly()))
+            return false;
+        if (isTableExists(sqLiteDatabase, tableName))
+            return true;
+        try {
+            StringBuilder commandBuilder = new StringBuilder("CREATE TABLE "
+                    + tableName + " ( ");
+            String previousSymbol = "";
+            for (String string : columnNamesWithTypes) {
+                commandBuilder.append(previousSymbol).append(string);
+                previousSymbol = ", ";
+            }
+            String command = commandBuilder.append(")").toString();
+            sqLiteDatabase.execSQL(command);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    public <T> void createColumnsMap(Class<T> mClass) {
         if (!COLUMN_FIELDS.isEmpty())
             COLUMN_FIELDS.clear();
         boolean primaryKeyFound = false;
@@ -76,10 +110,10 @@ public class TableCreator {
                 PrimaryKey primaryKeyAnnotation = field.getAnnotation(PrimaryKey.class);
                 String primaryKeyString = "";
                 if (primaryKeyAnnotation != null && (TYPE_ADAPTERS.get(field.getType()).equals("INTEGER"))) {
-                    if(primaryKeyFound)
+                    if (primaryKeyFound)
                         throw new RuntimeException("Multiple Primary Keys found in column model");
                     primaryKeyString = " PRIMARY KEY AUTOINCREMENT";
-                    primaryKeyFound=true;
+                    primaryKeyFound = true;
                 }
 
                 COLUMN_FIELDS.put(columnAnnotation.value(), TYPE_ADAPTERS.get(field.getType()) + primaryKeyString);
