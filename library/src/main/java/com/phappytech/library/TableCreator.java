@@ -1,8 +1,11 @@
 package com.phappytech.library;
 
+import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.support.annotation.NonNull;
 
 import com.google.common.collect.ImmutableMap;
@@ -92,7 +95,54 @@ public class TableCreator {
         return true;
     }
 
-    public <T> void createColumnsMap(Class<T> mClass) {
+
+    public <T> boolean copyTableFromDB(@NonNull SQLiteDatabase fromDB, @NonNull SQLiteDatabase toDb, @NonNull String tableName) {
+        Cursor fromCursor = fromDB.query(tableName, null, null, null, null, null, null);
+
+        if (!toDb.isOpen() || (toDb.isOpen() && toDb.isReadOnly()) || fromCursor == null || fromCursor.getColumnCount() == 0)
+            return false;
+        if (!isTableExists(toDb, tableName)) {
+            fromCursor.moveToFirst();
+            createTable(toDb, tableName, createColumnNames(fromCursor));
+        }
+        else{
+            toDb.delete(tableName,null,null);
+        }
+        try {
+            toDb.insert(tableName, null, cursorRowToContentValues(fromCursor));
+            fromCursor.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    private String[] createColumnNames(Cursor cursor) {
+        String[] strings = new String[cursor.getColumnCount()];
+        for (int i = 0; i < strings.length; i++) {
+            strings[i] = cursor.getColumnName(i) + " " + getTypeText(cursor.getType(i));
+        }
+
+        return strings;
+    }
+
+    private String getTypeText(int type) {
+        switch (type) {
+            case Cursor.FIELD_TYPE_INTEGER:
+                return "INTEGER";
+            case Cursor.FIELD_TYPE_FLOAT:
+                return "REAL";
+            case Cursor.FIELD_TYPE_STRING:
+                return "TEXT";
+            case Cursor.FIELD_TYPE_BLOB:
+                return "BLOB";
+            default:
+                return "TEXT";
+        }
+    }
+
+    private <T> void createColumnsMap(Class<T> mClass) {
         if (!COLUMN_FIELDS.isEmpty())
             COLUMN_FIELDS.clear();
         boolean primaryKeyFound = false;
@@ -149,7 +199,7 @@ public class TableCreator {
         TYPE_ADAPTERS = ImmutableMap.copyOf(typeAdapters);
     }
 
-    private boolean isTableExists(SQLiteDatabase sqLiteDatabase, String tableName) {
+    public boolean isTableExists(SQLiteDatabase sqLiteDatabase, String tableName) {
 
         Cursor cursor = sqLiteDatabase.rawQuery("select DISTINCT tbl_name from sqlite_master where tbl_name = '" + tableName + "'", null);
         if (cursor != null) {
@@ -160,5 +210,31 @@ public class TableCreator {
             cursor.close();
         }
         return false;
+    }
+
+    public static ContentValues cursorRowToContentValues(Cursor cursor) {
+        ContentValues values = new ContentValues();
+        String[] columns = cursor.getColumnNames();
+        int length = columns.length;
+        for (int i = 0; i < length; i++) {
+            switch (cursor.getType(i)) {
+                case Cursor.FIELD_TYPE_NULL:
+                    values.putNull(columns[i]);
+                    break;
+                case Cursor.FIELD_TYPE_INTEGER:
+                    values.put(columns[i], cursor.getLong(i));
+                    break;
+                case Cursor.FIELD_TYPE_FLOAT:
+                    values.put(columns[i], cursor.getDouble(i));
+                    break;
+                case Cursor.FIELD_TYPE_STRING:
+                    values.put(columns[i], cursor.getString(i));
+                    break;
+                case Cursor.FIELD_TYPE_BLOB:
+                    values.put(columns[i], cursor.getBlob(i));
+                    break;
+            }
+        }
+        return values;
     }
 }

@@ -7,8 +7,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
-    public DatabaseHelper(Context context) {
-        super(context, "test.db", null, 1);
+    public DatabaseHelper(Context context,String name) {
+        super(context, name, null, 1);
         // TODO Auto-generated constructor stub
     }
 
