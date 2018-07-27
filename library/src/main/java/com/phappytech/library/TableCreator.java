@@ -125,6 +125,7 @@ public class TableCreator {
         try {
             SQLiteAssetHelper sqLiteAssetHelper=new SQLiteAssetHelper(context,fromDBName,null,1);
             SQLiteAssetHelper sqLiteAssetHelperTo=new SQLiteAssetHelper(context,toDbName,null,1);
+            sqLiteAssetHelperTo.setCreateNewIfNotExist(true);
             fromDb=sqLiteAssetHelper.getReadableDatabase();
             toDb=sqLiteAssetHelperTo.getWritableDatabase();
             if (fromDb == null || toDb == null)
