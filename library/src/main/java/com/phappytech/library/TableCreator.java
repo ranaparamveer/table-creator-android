@@ -12,6 +12,7 @@ import android.support.annotation.Nullable;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.phappytech.library.annotations.PrimaryKey;
+import com.readystatesoftware.sqliteasset.SQLiteAssetHelper;
 
 import org.chalup.microorm.annotations.Column;
 
@@ -118,24 +119,14 @@ public class TableCreator {
         return true;
     }
 
-    public boolean copyTableFromDB(@NonNull Context context, @NonNull String fromDBName, @NonNull String toDbName, @NonNull String tableName) {
+    public boolean copyTableFromDB(@NonNull Context context, @NonNull String fromDBName,
+                                   @NonNull String toDbName, @NonNull String tableName) {
         SQLiteDatabase fromDb = null, toDb = null;
         try {
-            String fromDBPath = getDatabasePath(context, null, fromDBName);
-            String toDBPath = getDatabasePath(context, null, toDbName);
-            File fromDbFile = new File(fromDBPath);
-            File toDbFile = new File(toDBPath);
-
-            if (fromDbFile.exists()) {
-                fromDb = SQLiteDatabase.openDatabase(fromDBPath, null, SQLiteDatabase.OPEN_READONLY);
-            } else
-                return false;
-            if (!toDbFile.exists())
-                toDbFile.mkdirs();
-
-            toDb = SQLiteDatabase.openDatabase(toDBPath, null, SQLiteDatabase.OPEN_READWRITE);
-
-
+            SQLiteAssetHelper sqLiteAssetHelper=new SQLiteAssetHelper(context,fromDBName,null,1);
+            SQLiteAssetHelper sqLiteAssetHelperTo=new SQLiteAssetHelper(context,toDbName,null,1);
+            fromDb=sqLiteAssetHelper.getReadableDatabase();
+            toDb=sqLiteAssetHelperTo.getWritableDatabase();
             if (fromDb == null || toDb == null)
                 return false;
             Cursor fromCursor = fromDb.query(tableName, null, null, null, null, null, null);
