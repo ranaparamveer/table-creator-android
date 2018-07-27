@@ -12,7 +12,7 @@ If you are using the Gradle build system, simply add the following dependency in
 ```groovy
 dependencies {
     implementation 'com.github.ranaparamveer:microorm:0.8.5'
-    implementation 'com.github.ranaparamveer:table-creator-android:v1.0.7'
+    implementation 'com.github.ranaparamveer:table-creator-android:v1.0.8'
 }
 ```
 
