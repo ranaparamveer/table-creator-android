@@ -7,6 +7,7 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -14,6 +15,7 @@ import com.phappytech.library.annotations.PrimaryKey;
 
 import org.chalup.microorm.annotations.Column;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -68,12 +70,11 @@ public class TableCreator {
      * @param tableName            table name to create
      * @param columnNamesWithTypes String array of column names with their types.
      *                             eg: new String[]{"ZNAME TEXT","ZID INTEGER"}
-     * @param <T>                  template of class to be used
      * @return true if table already exists or is successfully created
      * false otherwise
      */
-    public <T> boolean createTable(@NonNull SQLiteDatabase sqLiteDatabase, @NonNull String tableName,
-                                   @NonNull String[] columnNamesWithTypes) {
+    public boolean createTable(@NonNull SQLiteDatabase sqLiteDatabase, @NonNull String tableName,
+                               @NonNull String[] columnNamesWithTypes) {
         if (!sqLiteDatabase.isOpen() || (sqLiteDatabase.isOpen() && sqLiteDatabase.isReadOnly()))
             return false;
         if (isTableExists(sqLiteDatabase, tableName))
@@ -96,7 +97,7 @@ public class TableCreator {
     }
 
 
-    public <T> boolean copyTableFromDB(@NonNull SQLiteDatabase fromDB, @NonNull SQLiteDatabase toDb, @NonNull String tableName) {
+    public boolean copyTableFromDB(@NonNull SQLiteDatabase fromDB, @NonNull SQLiteDatabase toDb, @NonNull String tableName) {
         Cursor fromCursor = fromDB.query(tableName, null, null, null, null, null, null);
 
         if (!toDb.isOpen() || (toDb.isOpen() && toDb.isReadOnly()) || fromCursor == null || fromCursor.getColumnCount() == 0)
@@ -104,9 +105,8 @@ public class TableCreator {
         if (!isTableExists(toDb, tableName)) {
             fromCursor.moveToFirst();
             createTable(toDb, tableName, createColumnNames(fromCursor));
-        }
-        else{
-            toDb.delete(tableName,null,null);
+        } else {
+            toDb.delete(tableName, null, null);
         }
         try {
             toDb.insert(tableName, null, cursorRowToContentValues(fromCursor));
@@ -116,6 +116,67 @@ public class TableCreator {
             return false;
         }
         return true;
+    }
+
+    public boolean copyTableFromDB(@NonNull Context context, @NonNull String fromDBName, @NonNull String toDbName, @NonNull String tableName) {
+        SQLiteDatabase fromDb = null, toDb = null;
+        try {
+            String fromDBPath = getDatabasePath(context, null, fromDBName);
+            String toDBPath = getDatabasePath(context, null, toDbName);
+            File fromDbFile = new File(fromDBPath);
+            File toDbFile = new File(toDBPath);
+
+            if (fromDbFile.exists()) {
+                fromDb = SQLiteDatabase.openDatabase(fromDBPath, null, SQLiteDatabase.OPEN_READONLY);
+            } else
+                return false;
+            if (!toDbFile.exists())
+                toDbFile.mkdirs();
+
+            toDb = SQLiteDatabase.openDatabase(toDBPath, null, SQLiteDatabase.OPEN_READWRITE);
+
+
+            if (fromDb == null || toDb == null)
+                return false;
+            Cursor fromCursor = fromDb.query(tableName, null, null, null, null, null, null);
+
+            if (!toDb.isOpen() || (toDb.isOpen() && toDb.isReadOnly()) || fromCursor == null || fromCursor.getColumnCount() == 0)
+                return false;
+            if (!isTableExists(toDb, tableName)) {
+                fromCursor.moveToFirst();
+                createTable(toDb, tableName, createColumnNames(fromCursor));
+            } else {
+                toDb.delete(tableName, null, null);
+            }
+            try {
+                toDb.insert(tableName, null, cursorRowToContentValues(fromCursor));
+                fromCursor.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return false;
+            } finally {
+                fromCursor.close();
+            }
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (fromDb != null && fromDb.isOpen())
+                fromDb.close();
+            if (toDb != null && toDb.isOpen())
+                toDb.close();
+        }
+    }
+
+    private String getDatabasePath(@NonNull Context context, @Nullable String storageDirectory, @NonNull String name) {
+        String mDatabasePath;
+        if (storageDirectory != null) {
+            mDatabasePath = storageDirectory;
+        } else {
+            mDatabasePath = context.getApplicationInfo().dataDir + "/databases";
+        }
+        return mDatabasePath + "/" + name;
     }
 
     private String[] createColumnNames(Cursor cursor) {
