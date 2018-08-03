@@ -12,7 +12,7 @@ If you are using the Gradle build system, simply add the following dependency in
 ```groovy
 dependencies {
     implementation 'com.github.ranaparamveer:microorm:0.8.5'
-    implementation 'com.github.ranaparamveer:table-creator-android:v1.0.8'
+    implementation 'com.github.ranaparamveer:table-creator-android:v1.0.9'
 }
 ```
 
@@ -58,4 +58,7 @@ To add a field as colum, attach ```@Column``` annotation and to set any field as
     boolean isPresent;
     @Column("salary")
     float salaryInLacs;
+    @UniqueKey
+    @Column("specialID")
+    String specialID;
     ```
